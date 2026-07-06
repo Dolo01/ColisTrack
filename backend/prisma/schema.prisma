@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  nom       String
+  telephone String    @unique
+  email     String?   @unique
+  password  String
+  role      Role      @default(CLIENT)
+  colis     Colis[]
+  createdAt DateTime  @default(now())
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+model Colis {
+  id              String             @id @default(uuid())
+  codeSuivi       String             @unique
+  clientId        String?
+  client          User?              @relation(fields: [clientId], references: [id])
+  telephoneClient String
+  description     String
+  statutActuel    StatutColis        @default(ACHAT_EFFECTUE)
+  historique      HistoriqueStatut[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+enum StatutColis {
+  ACHAT_EFFECTUE
+  EXPEDIE_VENDEUR
+  ARRIVE_TRANSITAIRE
+  EN_TRAITEMENT
+  ENVOYE_MALI
+  ARRIVE_MALI
+  DISPONIBLE
+  RECUPERE
+}
+
+model HistoriqueStatut {
+  id          String      @id @default(uuid())
+  colisId     String
+  colis       Colis       @relation(fields: [colisId], references: [id])
+  statut      StatutColis
+  date        DateTime    @default(now())
+  commentaire String?
+}

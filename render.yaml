@@ -1,0 +1,42 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: colistrack-backend
+    env: node
+    plan: free # Change if needed
+    region: frankfurt
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate
+    startCommand: npx prisma migrate deploy && node src/server.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Requires manual setup in Render Dashboard with Supabase URL
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: "admin@colistrack.com" # Change this!
+      - key: ADMIN_PASSWORD
+        value: "AdminPass123!" # Change this!
+
+  # Frontend Static Site
+  - type: web
+    name: colistrack-frontend
+    env: static
+    plan: free # Change if needed
+    region: frankfurt
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: colistrack-backend
+          envVarKey: RENDER_EXTERNAL_URL
+          property: url
+          modifier: append
+          value: "/api"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
